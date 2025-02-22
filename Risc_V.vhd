@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-entity Risc_V is
+entity Risc_V_Unicycle is
     generic(WSIZE : natural := 32);  -- Tamanho da palavra (32 bits)
 end Risc_V_Unicycle;
 
