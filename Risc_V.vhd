@@ -125,7 +125,7 @@ begin
     data_mem: Data_Mem_RV port map(
         clk => clk,
         we => MemWrite,
-		  mr => MemRead
+	mr => MemRead
         addr => ula_out,
         data_in => xreg_out2,
         data_out => mem_out
@@ -139,8 +139,8 @@ begin
         MemRead => MemRead,
         MemWrite => MemWrite,
         RegWrite => RegWrite,
-        Mem2Reg => Mem2Reg
-		  isCa => isCa
+        Mem2Reg => Mem2Reg,
+	isCa => isCa
     );
 
     ula_ctrl: Control_ALU port map(
