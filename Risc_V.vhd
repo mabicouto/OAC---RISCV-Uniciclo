@@ -57,7 +57,7 @@ architecture main of Risc_V is
         port (
             instr : in std_logic_vector(31 downto 0);
             ALUOp : out std_logic_vector(1 downto 0);
-            ALUSrc, Branch, MemRead, MemWrite, RegWrite, Mem2Reg : out std_logic
+            ALUSrc, Branch, isCa, MemRead, MemWrite, RegWrite, Mem2Reg : out std_logic
         );
     end component;
 
