@@ -10,7 +10,7 @@ architecture main of Risc_V is
 
     -- Declaração dos módulos
 
-    component ULA_RiscV is
+    component ulaRV is
         port(
             opcode: in std_logic_vector(3 downto 0);
             A, B : in std_logic_vector(WSIZE -1 downto 0);
@@ -19,33 +19,31 @@ architecture main of Risc_V is
         );
     end component;
 
-    component XREGS is
+    component Xreg is
         port(
-            clk, wren, rst : in std_logic;
+            wren : in std_logic;
             rs1, rs2, rd : in std_logic_vector(4 downto 0);
             data : in std_logic_vector(WSIZE-1 downto 0);
             ro1, ro2 : out std_logic_vector(WSIZE-1 downto 0)
         );
     end component;
 
-    component imm32 is
+    component GeImm is
         port (
             instr : in std_logic_vector(31 downto 0);
             imm32 : out signed(31 downto 0)
         );
     end component;
 
-    component Code_Mem_RV is
+    component Code_mem is
         port (
-            clk : in std_logic;
             addr : in std_logic_vector(31 downto 0);
             data_out : out std_logic_vector(31 downto 0)
         );
     end component;
 
-    component Data_Mem_RV is
+    component data_mem is
         port (
-            clk : in std_logic;
             we : in std_logic;
             addr : in std_logic_vector(31 downto 0);
             data_in : in std_logic_vector(31 downto 0);
@@ -53,15 +51,15 @@ architecture main of Risc_V is
         );
     end component;
 
-    component Control is
+    component Controle is
         port (
             instr : in std_logic_vector(31 downto 0);
             ALUOp : out std_logic_vector(1 downto 0);
-            ALUSrc, Branch, isCa, MemRead, MemWrite, RegWrite, Mem2Reg : out std_logic
+            ALUSrc, isCa, Branch, MemRead, MemWrite, RegWrite, Mem2Reg : out std_logic
         );
     end component;
 
-    component Control_ALU is
+    component aluctr is
         port (
             ALUOp : in std_logic_vector(1 downto 0);
             funct7 : in std_logic;
@@ -70,7 +68,7 @@ architecture main of Risc_V is
         );
     end component;
 
-    component mux is
+    component Mux is
         port (
             a, b : in std_logic_vector(WSIZE-1 downto 0);
             ctrl : in std_logic;
@@ -79,21 +77,22 @@ architecture main of Risc_V is
     end component;
 
     -- Sinais
-    signal clk, rst, zero, ALUSrc, Branch, MemRead, MemWrite, RegWrite, Mem2Reg : std_logic;
+    signal clk, rst, zero, ALUSrc, Branch, MemRead, MemWrite, RegWrite, Mem2Reg, isCa : std_logic;
     signal ula_command : std_logic_vector(3 downto 0);
     signal rs1, rs2, rd : std_logic_vector(4 downto 0);
-    signal xreg_out1, xreg_out2, xreg_in, ula_in1, ula_in2, ula_out, imm_value : std_logic_vector(WSIZE-1 downto 0);
+    signal xreg_out1, xreg_out2, xreg_in, ula_in1, ula_in2, ula_out: std_logic_vector(WSIZE-1 downto 0);
     signal instr, mem_out, mem_in, pc, next_pc, pc_plus_4, branch_target : std_logic_vector(WSIZE-1 downto 0);
     signal ALUOp : std_logic_vector(1 downto 0);
     signal funct3 : std_logic_vector(2 downto 0);
     signal funct7 : std_logic;
+    signal imm_value : signed(31 downto 0);  -- Sinal para o valor imediato gerado pelo GeImm
+
 
 begin
 
     -- Instanciação dos módulos
 
-    xreg: XREGS port map(
-        clk => clk,
+    xreg_insta: Xreg port map(
         wren => RegWrite,
         rs1 => rs1,
         rs2 => rs2,
@@ -103,7 +102,7 @@ begin
         ro2 => xreg_out2
     );
 
-    ula: ULA_RiscV port map(
+    ula: ulaRV port map(
         opcode => ula_command,
         A => ula_in1,
         B => ula_in2,
@@ -111,27 +110,24 @@ begin
         zero => zero
     );
 
-    imm: imm32 port map(
+    imm: GeImm port map(
         instr => instr,
-        imm32 => signed(imm_value)
+        imm32 => imm_value
     );
 
-    code_mem: Code_Mem_RV port map(
-        clk => clk,
+    code_mem_inst: Code_mem port map(
         addr => pc,
         data_out => instr
     );
 
-    data_mem: Data_Mem_RV port map(
-        clk => clk,
+    data_mem_inst: data_mem port map(
         we => MemWrite,
-	mr => MemRead
         addr => ula_out,
         data_in => xreg_out2,
         data_out => mem_out
     );
 
-    ctrl: Control port map(
+    ctrl: Controle port map(
         instr => instr,
         ALUOp => ALUOp,
         ALUSrc => ALUSrc,
@@ -140,33 +136,33 @@ begin
         MemWrite => MemWrite,
         RegWrite => RegWrite,
         Mem2Reg => Mem2Reg,
-	isCa => isCa
+        isCa => isCa
     );
 
-    ula_ctrl: Control_ALU port map(
+    ula_ctrl: aluctr port map(
         ALUOp => ALUOp,
         funct7 => funct7,
         funct3 => funct3,
         opOut => ula_command
     );
 
-    mux_ula: mux port map(
+    Mux_ula: Mux port map(
         a => xreg_out2,
-        b => imm_value,
+        b => std_logic_vector(imm_value),  -- Converte signed para std_logic_vector
         ctrl => ALUSrc,
         z => ula_in2
     );
 
-    mux_mem: mux port map(
+    Mux_mem: Mux port map(
         a => ula_out,
         b => mem_out,
         ctrl => Mem2Reg,
         z => xreg_in
     );
 
-    mux_pc: mux port map(
+    Mux_pc: Mux port map(
         a => pc_plus_4,
-        b => branch_target,
+        b => std_logic_vector(signed(pc) + imm_value),  -- Converte signed para std_logic_vector
         ctrl => Branch and zero,
         z => next_pc
     );
@@ -180,10 +176,7 @@ begin
     end process;
 
     -- Cálculo de PC + 4
-    pc_plus_4 <= std_logic_vector(unsigned(pc) + 4;
-
-    -- Cálculo do endereço de branch
-    branch_target <= std_logic_vector(unsigned(pc) + unsigned(imm_value);
+    pc_plus_4 <= std_logic_vector(unsigned(pc) + 4);
 
     -- Decodificação de funct3 e funct7
     funct3 <= instr(14 downto 12);
