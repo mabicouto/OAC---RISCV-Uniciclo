@@ -90,14 +90,11 @@ architecture main of Risc_V is
 
 begin
 
-    rst <= '0';  -- Reset não utilizado neste exemplo
-
     -- Instanciação dos módulos
 
     xreg: XREGS port map(
         clk => clk,
         wren => RegWrite,
-        rst => rst,
         rs1 => rs1,
         rs2 => rs2,
         rd => rd,
@@ -128,6 +125,7 @@ begin
     data_mem: Data_Mem_RV port map(
         clk => clk,
         we => MemWrite,
+		  mr => MemRead
         addr => ula_out,
         data_in => xreg_out2,
         data_out => mem_out
@@ -142,6 +140,7 @@ begin
         MemWrite => MemWrite,
         RegWrite => RegWrite,
         Mem2Reg => Mem2Reg
+		  isCa => isCa
     );
 
     ula_ctrl: Control_ALU port map(
