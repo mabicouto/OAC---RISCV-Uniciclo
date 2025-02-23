@@ -1,62 +1,71 @@
-library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity testbench is
-    generic(WSIZE : natural := 32); -- Tamanho da palavra
+-- testbench has no ports.
 end testbench;
 
-architecture test of testbench is
+architecture behavior of testbench is 
 
-    -- Declaração do componente RiscV
-    component RiscV is
-        generic(WSIZE : natural := 32);
-        port (
-            clk : in std_logic; -- Sinal de clock
-            rst : in std_logic  -- Sinal de reset
-        );
+    -- component declaration for the unit under test (uut)
+    component Risc_V
+    generic (WSIZE : natural := 32); -- tamanho da palavra
+    port(
+        clk : in  std_logic;  -- sinal de clock
+        rst : in  std_logic   -- sinal de reset
+    );
     end component;
 
-    -- Sinais do testbench
-    signal clk : std_logic := '0'; -- Sinal de clock (inicializado em '0')
-    signal rst : std_logic := '1'; -- Sinal de reset (inicializado em '1')
+    -- end of simulation flag
+    signal test_finished : boolean := false;
+    
+    -- inputs
+    signal clk : std_logic := '0';  -- inicializado com '0'
+    signal rst : std_logic := '1';  -- sinal de reset adicionado
 
-begin
+    -- clock period definition
+    constant clk_period : time := 10 ns; -- período do clock (10 ns)
 
-    -- Instanciação do DUT (Device Under Test)
-    DUT: RiscV
-        generic map (WSIZE => WSIZE)
+begin 
+    -- instantiate the unit under test (uut)
+    uut: Risc_V
+        generic map (wsize => 32)
         port map (
             clk => clk,
             rst => rst
         );
 
-    -- Processo para gerar o clock
-    process
+    -- clock process
+    clk_process: process
     begin
+        wait for clk_period/2;
+        while not test_finished loop
+            clk <= '0';
+            wait for clk_period/2;
+            clk <= '1';
+            wait for clk_period/2;
+        end loop;
         clk <= '0';
-        wait for 5 ns;
-        clk <= '1';
-        wait for 5 ns;
-    end process;
-
-    -- Processo para controlar o reset e a simulação
-    process
-    begin
-        -- Mantém o reset ativo por 10 ns
-        rst <= '1';
-        wait for 10 ns;
-
-        -- Desativa o reset
-        rst <= '0';
-		  wait for 1000 ns;
-
-
-        -- Aguarda o fim da simulação
-
-        -- Finaliza a simulação
+        wait for clk_period/2;
         wait;
     end process;
 
+    -- test stimulus process
+    stimulus: process
+    begin
+        -- aplica o reset
+        rst <= '1';  -- ativa o reset
+        wait for clk_period * 2;  -- mantém o reset ativo por 2 ciclos de clock
+        rst <= '0';  -- desativa o reset
 
-end test;
+        -- aguarda alguns ciclos de clock para o processador operar
+        wait for 10 * clk_period;
+
+        -- finaliza a simulação
+        test_finished <= true;
+        
+        wait;  -- aguarda indefinidamente
+    end process;
+
+end behavior;
