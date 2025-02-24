@@ -1,0 +1,48 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use IEEE.STD_LOGIC_TEXTIO.ALL;
+use STD.TEXTIO.ALL;
+
+entity rom_rv is
+  port (
+    address : in  std_logic_vector(10 downto 0);
+    dataout : out std_logic_vector(31 downto 0)
+  );
+end entity rom_rv;
+
+architecture RTL of rom_rv is
+  type rom_type is array (0 to 2047) of std_logic_vector(31 downto 0);
+  signal rom : rom_type := (others => (others => '0')); -- Vetor de 2048 instruções de 32 bits
+  file instr_file : text open read_mode is  "C:\altera\13.0sp1\trab7_mem\inst.txt"; -- Caminho para o arquivo de instruções
+ 
+begin
+
+  -- Processo de leitura do arquivo
+  process
+    variable idx : integer := 0;
+	 variable line_data : line;                     -- Variável para ler cada linha do arquivo
+	 variable inst_data : std_logic_vector(31 downto 0); -- Dados lidos da linha
+	  begin
+		 -- Lendo o arquivo de instruções
+		 while (not endfile(instr_file)) loop
+			readline(instr_file, line_data);           -- Lê uma linha do arquivo
+			read(line_data, inst_data);                -- Lê a linha e converte para std_logic_vector
+
+			-- Atribuindo o valor lido à ROM (sinal)
+			rom(idx) <= inst_data;                     -- Usando <= para atribuição ao sinal rom
+			idx := idx + 1;
+
+			-- Limita a ROM a 2048 instruções
+			if idx = 2048 then
+			  exit;                                    -- Sai do loop se o limite for atingido
+			end if;
+		 end loop;
+
+		 wait; -- Aguardar a execução do processo
+  end process;
+
+  -- Leitura da ROM: quando o endereço for fornecido, retorna a instrução correspondente
+  dataout <= rom(to_integer(unsigned(address))); -- Atribuição da instrução com base no endereço
+
+end architecture RTL;

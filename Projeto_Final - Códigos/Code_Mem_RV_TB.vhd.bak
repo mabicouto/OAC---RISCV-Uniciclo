@@ -1,0 +1,65 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+use std.textio.all;
+
+entity Code_Mem_RV_TB is
+end entity;
+
+architecture Behavioral of Code_Mem_RV_TB is
+    -- Componente a ser testado
+    component Code_Mem_RV is
+        port (
+            addr     : in  std_logic_vector(31 downto 0);
+            data_out : out std_logic_vector(31 downto 0)
+        );
+    end component;
+
+    -- Sinais de teste
+    signal addr     : std_logic_vector(31 downto 0) := (others => '0');
+    signal data_out : std_logic_vector(31 downto 0);
+
+begin
+    -- Instância do componente a ser testado
+    UUT: Code_Mem_RV
+        port map (
+            addr     => addr,
+            data_out => data_out
+        );
+
+    -- Processo de teste
+    process
+    begin
+        -- Teste 1: Ler o primeiro endereço (0x00000000)
+        addr <= std_logic_vector(to_unsigned(0, 32));
+        wait for 10 ns;
+        assert data_out = mem(0)
+            report "Erro no endereço 0x00000000. Esperado: " & to_hstring(mem(0)) & ", Obtido: " & to_hstring(data_out)
+            severity error;
+
+        -- Teste 2: Ler o segundo endereço (0x00000004)
+        addr <= std_logic_vector(to_unsigned(4, 32));
+        wait for 10 ns;
+        assert data_out = mem(1)
+            report "Erro no endereço 0x00000004. Esperado: " & to_hstring(mem(1)) & ", Obtido: " & to_hstring(data_out)
+            severity error;
+
+        -- Teste 3: Ler um endereço fora do limite (0x00002000)
+        addr <= std_logic_vector(to_unsigned(LIMIT, 32));
+        wait for 10 ns;
+        assert data_out = (others => '0')
+            report "Erro no endereço 0x00002000. Esperado: 0x00000000, Obtido: " & to_hstring(data_out)
+            severity error;
+
+        -- Teste 4: Ler um endereço intermediário (0x00000010)
+        addr <= std_logic_vector(to_unsigned(16, 32));
+        wait for 10 ns;
+        assert data_out = mem(4)
+            report "Erro no endereço 0x00000010. Esperado: " & to_hstring(mem(4)) & ", Obtido: " & to_hstring(data_out)
+            severity error;
+
+        -- Finalizar simulação
+        report "Testes concluídos!";
+        wait;
+    end process;
+end architecture;
