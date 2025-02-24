@@ -172,7 +172,15 @@ begin
         ctrl => Mem2Reg,
         z => memula
     );
-
+	 
+    Mux_auipc: Mux port map(
+        a => xreg_out1,
+        b => pc,
+        ctrl => isCa,
+        z => ula_in1
+    );
+	 
+	 
     -- Multiplexador para selecionar entre memula e PC + 4 (para JAL/JALR)
     Mux_memula: Mux port map(
         a => memula,
@@ -229,8 +237,6 @@ begin
     rs1 <= instr(19 downto 15);
     rs2 <= instr(24 downto 20);
     rd <= instr(11 downto 7);
-
-    ula_in1 <= xreg_out1;
 
     debug_pc <= pc;
 
