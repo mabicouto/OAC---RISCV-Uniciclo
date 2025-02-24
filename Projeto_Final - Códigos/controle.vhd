@@ -87,7 +87,7 @@ begin
 
             when "1100011" =>  
                 ALUOp      <= "01";
-                ALUSrc     <= '1';
+                ALUSrc     <= '0';
                 Branch     <= '1';
                 MemRead    <= '0';
                 MemWrite   <= '0';
